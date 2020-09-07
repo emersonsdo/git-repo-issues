@@ -19,8 +19,7 @@ function Repository({ match }) {
   const [filterIndex, setFilterIndex] = useState(0);
   const [page, setPage] = useState(1);
 
-  /** TODO: Separar uma função (outro useEfect) para fazer os loads das issues */
-  /** pois os repositórios também estão sendo carregados novamente sem necessidade */
+  /** Esse aqui será executado apenas uma vez */
   useEffect(() => {
     async function loadData() {
       const repoName = decodeURIComponent(match.params.repository);
@@ -41,10 +40,28 @@ function Repository({ match }) {
     // setLoading(true);
     loadData();
     // setLoading(false);
-  }, [match.params.repository, filterIndex, filters, page]);
+  }, []);
+
+  /** Esse será executado sempre que houver mudança nos filtros ou de página */
+  useEffect(() => {
+    const repoName = decodeURIComponent(match.params.repository);
+    async function loadIssues() {
+      const iss = await apiGit.get(`/repos/${repoName}/issues`, {
+        params: {
+          state: filters[filterIndex].state,
+          per_page: 5,
+          page,
+        },
+      });
+      setIssue(iss.data);
+    }
+
+    loadIssues();
+  }, [filterIndex, page]);
 
   function handleFilterClick(index) {
     setFilterIndex(index);
+    // Ao mudar de filtro, volta à página inicial
     setPage(1);
   }
 
